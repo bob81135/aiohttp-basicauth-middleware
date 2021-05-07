@@ -1,5 +1,6 @@
 import inspect
 import logging
+import os
 from typing import (
     Callable,
     Iterable,
@@ -30,6 +31,19 @@ from aiohttp_basicauth_middleware.strategy import BaseStrategy
 
 log = logging.getLogger(__name__)
 
+def check_list(url, path):
+    filename, file_extension = os.path.splitext(url)
+    pathname, path_extension = os.path.splitext(path)
+    if(file_extension==""):
+        filename+="/"
+    if(path_extension==""):
+        pathname+="/"
+        if(filename.startswith(pathname)):
+            return True
+    else:
+        if(url == path):
+            return True
+    return False
 
 def check_access(
     auth_dict: dict,
@@ -60,8 +74,10 @@ def basic_auth_middleware(
     async def factory(app, handler) -> Coroutine:
         async def middleware(request) -> web.Response:
             for url in urls:
-                if not request.path.startswith(url):
+                if not check_list(request.path,url):
                     continue
+                # if not request.path.startswith(url):
+                #     continue
 
                 if inspect.isclass(strategy) and issubclass(strategy, BaseStrategy):
                     log.debug("Use Strategy: %r", strategy.__name__)
